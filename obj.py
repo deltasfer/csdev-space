@@ -1,11 +1,5 @@
 from time import time
 
-def collision(a,b):
-
-    if (a[0] > b[2]) or (a[2] < b[0]) or (a[1] > b[3]) or (a[3] < b[1]):
-        return False #  oklm c'est bon ca collisionne PAS
-    else:
-        return True # aoutch ca collisionne
 
 class Tir():
 
@@ -16,8 +10,26 @@ class Tir():
         self.img = canvas.create_rectangle(x-1,y-1,x+1,y+1,fill=color)
         canvas.focus_set()
 
+#classe mere de tous les élements qui ont une vie -> Ilot
+class Bloc():
+
+    def __init__(self,x,y,canvas,fen):
+
+        self.vie = 1
+
+        self.x = x
+        self.y = y
+        self.canva = canvas
+        #self.img = self.canva.create_rectangle(x-20,y-10,x+10,y+10,width=5,fill='white')
+        self.img = self.canva.create_rectangle(x-10,y-10,x+10,y+10,width=2,fill='grey')
+        self.canva.focus_set()
+        self.fen = fen
+
+    def perdre_vie(self):
+        self.vie -= 1
+
 #classe mere de tous les vaisseaux
-class Vaisseau():
+class Vaisseau(Bloc):
 
     def __init__(self,x,y,canvas,fen,mechants):
 
@@ -66,7 +78,8 @@ class Vaisseau():
 
                 # on verifie les collisions avec chaque mechant
                 for mechant in self.mechants :
-                    if collision(self.canva.coords(mechant.img),self.canva.coords(tir.img)):
+                    collisions_mechants=self.canva.find_overlapping(*self.canva.coords(mechant.img))
+                    if tir.img in collisions_mechants :
                         tirs_a_suppr += [i]
                         mechant.perdre_vie()
             else:
@@ -80,9 +93,6 @@ class Vaisseau():
             di+= 1
 
         self.fen.after(50,self.deplacer_tirs)
-
-    def perdre_vie(self):
-        self.vie -= 1
 
     def connect_mechants(self,mechants):
         self.mechants = mechants

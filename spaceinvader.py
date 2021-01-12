@@ -32,28 +32,34 @@ Canevas = Canvas(fen,width=largeur,height=hauteur,bg=couleur,highlightthickness=
 # on affecte le fond d'ecran
 Canevas.grid(row=2,column=1,rowspan=4,columnspan=3,padx=10,pady=10)
 
+# on affecte le fond d'ecran
+hauteur=500
+largeur=500
+I=PhotoImage(file="earth.png")
+fondecran= Canevas.create_image(hauteur/2,largeur/2,image=I)
 
-#creation ilot 1
-PosXi=[]
-PosYi=[]
-ilots=[]
-for j in range (9):
-    if j<=2 :
-        PosYi.append(350)
-        PosXi.append(75+j*20)
-    elif j>2 and j<=5:
-        PosYi.append(350+20)
-        PosXi.append(75+(j-3)*20)
-    else:
-        PosYi.append(350+40)
-        PosXi.append(75+(j-6)*20)
+#creation ilots
+def create_ilots():
+    PosXi=[]
+    PosYi=[]
+    ilots=[]
+    for j in range (9):
+        if j<=2 :
+            PosYi.append(350)
+            PosXi.append(75+j*20)
+        elif j>2 and j<=5:
+            PosYi.append(350+20)
+            PosXi.append(75+(j-3)*20)
+        else:
+            PosYi.append(350+40)
+            PosXi.append(75+(j-6)*20)
 
-    ilots.append(Canevas.create_rectangle(PosXi[j]-10,PosYi[j]-10,PosXi[j]+10,PosYi[j]+10,width=2,fill='grey'))
-    Canevas.focus_set()
-    ilots.append(Canevas.create_rectangle(PosXi[j]+300-10,PosYi[j]-10,PosXi[j]+300+10,PosYi[j]+10,width=2,fill='grey'))
-    Canevas.focus_set()
-    ilots.append(Canevas.create_rectangle(PosXi[j]+150-10,PosYi[j]-10,PosXi[j]+150+10,PosYi[j]+10,width=2,fill='grey'))
-    Canevas.focus_set()
+        ilots.append(obj.Bloc(PosXi[j],PosYi[j],Canevas,fen))
+        ilots.append(obj.Bloc(PosXi[j]+150,PosYi[j],Canevas,fen))
+        ilots.append(obj.Bloc(PosXi[j]+300,PosYi[j],Canevas,fen))
+    return ilots
+ilots = create_ilots()
+
 
 
 #creationdu vaisseau
@@ -92,12 +98,12 @@ btn_propose.grid(row=5,column=4,sticky="w")
 #creationdu d'un mechant
 mechants = []
 for i in range(4):
-    mechants.append(obj.Mechant(50+i*100,150,Canevas,fen,[vaisseau]))
+    mechants.append(obj.Mechant(50+i*100,150,Canevas,fen,[vaisseau]+ilots))
 
 #creationdu d'un mechantbonus
 mechantsbonus = []
 for i in range(1):
-    mechantsbonus.append(obj.GroMechan(250,50,Canevas,fen,[vaisseau]))
+    mechantsbonus.append(obj.GroMechan(250,50,Canevas,fen,[vaisseau]+ilots))
 vaisseau.connect_mechants(mechants+mechantsbonus)
 
 
@@ -123,49 +129,40 @@ def Tirer(event):
 def update_vaisseaux():
 
 
-    global score,mechants,IN_GAME
+    global score,mechants,mechantsbonus,IN_GAME,ilots
 
     score_joueur['text'] = "score du joueur : "+str(score)
     vie_joueur['text'] = "Vies restantes: "+str(vaisseau.vie)
+
     if vaisseau.vie <= 0:
         print('GAME OVER')
         IN_GAME = False
+
     else:
 
-        morts = []
-        for i in range(len(mechants)):
-            if mechants[i].vie <= 0:
-                morts.append(i)
-
-        di = 0
-        for i in morts:
-            Canevas.delete(mechants[i-di].img)
-            del mechants[i-di]
-            score+=10
-            di+=1
-
-
-
-
-
-
-
-        morts = []
-        for i in range(len(mechantsbonus)):
-                if mechantsbonus[i].vie <= 0:
-                    morts.append(i)
-        a = 0
-        for i in morts:
-            Canevas.delete(mechantsbonus[i-a].img)
-            del mechantsbonus[i-a]
-            score+=150
-            a+=1
+        mechants = supprimer_objets_morts(mechants)
+        mechantsbonus = supprimer_objets_morts(mechantsbonus)
+        ilots = supprimer_objets_morts(ilots)
 
         vaisseau.connect_mechants(mechants+mechantsbonus)
-        #vaisseau.connect_mechants(mechants+mechantsbonus)
+        for mechant in mechants+mechantsbonus:
+            mechant.connect_mechants([vaisseau]+ilots)
 
         fen.after(30,update_vaisseaux)
 
+def supprimer_objets_morts(liste_blocs):
+
+        morts = []
+        for i in range(len(liste_blocs)):
+            if liste_blocs[i].vie <= 0:
+                morts.append(i)
+        di = 0
+        for i in morts:
+            Canevas.delete(liste_blocs[i-di].img)
+            del liste_blocs[i-di]
+            #score+=10
+            di+=1
+        return liste_blocs
 
 #pour bouger le vaisseau
 Canevas.bind('<q>',Deplacementvaisseau) and Canevas.bind('<d>',Deplacementvaisseau)
